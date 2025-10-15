@@ -5,7 +5,7 @@ const axios = require("axios");
 module.exports = {
   config: {
     name: "hack",
-    author: "MOHAMMAD AKASH",
+    author: "Mehedi Hassan",
     countDown: 5,
     role: 2,
     category: "fun",
