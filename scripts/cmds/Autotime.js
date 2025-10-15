@@ -2,7 +2,7 @@ module.exports = {
   config: {
     name: "autotime",
     version: "11.0",
-    author: "MOHAMMAD AKASH",
+    author: "Meheid Hassan",
     countDown: 5,
     role: 0,
     shortDescription: "Sends automatic messages by time",
