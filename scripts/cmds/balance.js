@@ -40,7 +40,7 @@ module.exports.config = {
   role: 0,
   shortDescription: "Check your coin balance or transfer coins 💰",
   longDescription: "Check your current balance or transfer coins to other users!",
-  category: "economy",
+  category: "game",
   guide: {
     en: "{p}balance\n{p}balance transfer @mention <amount>"
   }
