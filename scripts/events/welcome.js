@@ -46,7 +46,7 @@ __আপনি এই__
 
 ___Added By : {inviterName}___
 
-Bot Owner : Mohammad Akash
+Bot Owner : Mehedi Hassan
 			`
 		}
 	},
