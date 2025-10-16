@@ -1,129 +1,95 @@
 const { getTime, drive } = global.utils;
 
-if (!global.temp.welcomeEvent)
-	global.temp.welcomeEvent = {};
-
 module.exports = {
-	config: {
-		name: "welcome",
-		version: "2.0",
-		author: "Mehedi Hassan",
-		category: "events"
-	},
+  config: {
+    name: "welcome",
+    version: "2.1",
+    author: "Mehedi Hassan (Fix by GPT-5)",
+    category: "events"
+  },
 
-	langs: {
-		bn: {
-			session1: "সকাল",
-			session2: "দুপুর",
-			session3: "বিকেল",
-			session4: "রাত",
+  langs: {
+    en: {
+      session1: "morning",
+      session2: "noon",
+      session3: "afternoon",
+      session4: "evening",
+      defaultWelcomeMessage:
+        "__আসসালামু আলাইকুম__\n═══════════════\n__Welcome ➤ {userName}__\n\n_আমাদের {threadName}_\n_এর পক্ষ থেকে আপনাকে_\n       __!! স্বাগতম !!__\n__'আপনি এই__\n        __গ্রুপের {memberCount} নাম্বার মেমবার___!!\n\n___Added By : {inviterName}___\n\nBot Owner : Mehedi Hassan",
+      botAddedMessage:
+        "━━━━━━━━━━━━━━━━━━━━━\n🤖 ধন্যবাদ আমাকে গ্রুপে অ্যাড করার জন্য 💖\n\n⚙️ Bot Prefix :  /\n📜 সব কমান্ড দেখতে লিখুন :  /help\n\nচলুন একসাথে এই গ্রুপটা আরও মজার করে তুলি! 😄\n━━━━━━━━━━━━━━━━━━━━━"
+    }
+  },
 
-			// যখন বট নিজে অ্যাড হয়
-			welcomeMessage: `
-━━━━━━━━━━━━━━━━━━━━━
-🤖 ধন্যবাদ আমাকে এই গ্রুপে অ্যাড করার জন্য 💖
+  onStart: async ({ threadsData, message, event, api, usersData, getLang }) => {
+    if (event.logMessageType == "log:subscribe")
+      return async function () {
+        const { threadID } = event;
+        const threadData = await threadsData.get(threadID);
 
-⚙️ Bot Prefix :  %1
-📜 সব কমান্ড দেখতে লিখুন :  %1help
+        if (!threadData.settings.sendWelcomeMessage)
+          return;
 
-চলুন একসাথে এই গ্রুপটা আরও মজার করে তুলি! 😄
+        const addedMembers = event.logMessageData.addedParticipants;
+        const hours = getTime("HH");
+        const threadName = threadData.threadName;
 
-👑 Bot Owner : Mohammad Akash
-━━━━━━━━━━━━━━━━━━━━━
-			`,
+        for (const user of addedMembers) {
+          const userID = user.userFbId;
+          const botID = api.getCurrentUserID();
 
-			// যখন নতুন মেম্বার যোগ হয়
-			defaultWelcomeMessage: `
-__আসসালামু আলাইকুম__
-═══════════════
-__Welcome ➤ {userName}__
+          // ✅ যদি বটকে অ্যাড করা হয়
+          if (userID == botID) {
+            return message.send(getLang("botAddedMessage"));
+          }
 
-_আমাদের {boxName}_
-_এর পক্ষ থেকে আপনাকে_
-       __!! স্বাগতম !!__
-__আপনি এই__
-        __গ্রুপের {memberCount} নাম্বার মেম্বার__!!
+          // ✅ অন্য ইউজার যোগ হলে
+          const userName = user.fullName;
+          const inviterName = await usersData.getName(event.author);
+          const memberCount = event.participantIDs.length;
 
-___Added By : {inviterName}___
+          let { welcomeMessage = getLang("defaultWelcomeMessage") } = threadData.data;
 
-Bot Owner : Mehedi Hassan
-			`
-		}
-	},
+          const session =
+            hours <= 10
+              ? getLang("session1")
+              : hours <= 12
+              ? getLang("session2")
+              : hours <= 18
+              ? getLang("session3")
+              : getLang("session4");
 
-	onStart: async ({ threadsData, message, event, api, getLang }) => {
-		if (event.logMessageType == "log:subscribe")
-			return async function () {
-				const hours = getTime("HH");
-				const { threadID } = event;
-				const prefix = global.utils.getPrefix(threadID);
-				const { nickNameBot } = global.GoatBot.config;
-				const dataAddedParticipants = event.logMessageData.addedParticipants;
+          welcomeMessage = welcomeMessage
+            .replace(/\{userName\}/g, userName)
+            .replace(/\{threadName\}/g, threadName)
+            .replace(/\{memberCount\}/g, memberCount)
+            .replace(/\{inviterName\}/g, inviterName)
+            .replace(/\{session\}/g, session)
+            .replace(/\{time\}/g, hours);
 
-				// 🟢 যদি বট নিজে অ্যাড হয়
-				if (dataAddedParticipants.some((i) => i.userFbId == api.getCurrentUserID())) {
-					if (nickNameBot)
-						api.changeNickname(nickNameBot, threadID, api.getCurrentUserID());
-					return message.send(getLang("welcomeMessage", prefix));
-				}
+          const form = {
+            body: welcomeMessage,
+            mentions: [
+              {
+                tag: userName,
+                id: userID
+              }
+            ]
+          };
 
-				// 🟢 নতুন মেম্বারদের জন্য
-				if (!global.temp.welcomeEvent[threadID])
-					global.temp.welcomeEvent[threadID] = {
-						joinTimeout: null,
-						dataAddedParticipants: []
-					};
+          if (threadData.data.welcomeAttachment) {
+            const files = threadData.data.welcomeAttachment;
+            const attachments = files.reduce((acc, file) => {
+              acc.push(drive.getFile(file, "stream"));
+              return acc;
+            }, []);
+            form.attachment = (await Promise.allSettled(attachments))
+              .filter(({ status }) => status == "fulfilled")
+              .map(({ value }) => value);
+          }
 
-				global.temp.welcomeEvent[threadID].dataAddedParticipants.push(...dataAddedParticipants);
-				clearTimeout(global.temp.welcomeEvent[threadID].joinTimeout);
-
-				global.temp.welcomeEvent[threadID].joinTimeout = setTimeout(async function () {
-					const threadData = await threadsData.get(threadID);
-					if (threadData.settings.sendWelcomeMessage == false)
-						return;
-
-					const dataAddedParticipants = global.temp.welcomeEvent[threadID].dataAddedParticipants;
-					const threadName = threadData.threadName || "এই গ্রুপে";
-					const userName = [],
-						mentions = [];
-
-					for (const user of dataAddedParticipants) {
-						userName.push(user.fullName);
-						mentions.push({ tag: user.fullName, id: user.userFbId });
-					}
-
-					if (userName.length == 0) return;
-
-					let { welcomeMessage = getLang("defaultWelcomeMessage") } = threadData.data;
-
-					// 🧮 মেম্বার কাউন্ট বের করা
-					const threadInfo = await api.getThreadInfo(threadID);
-					const memberCount = threadInfo.participantIDs.length;
-
-					// 🧍‍♂️ যিনি অ্যাড করেছেন
-					const inviterID = event.author;
-					let inviterName = "Unknown";
-					try {
-						const info = await api.getUserInfo(inviterID);
-						inviterName = info[inviterID]?.name || "Unknown";
-					} catch { }
-
-					let session;
-					if (hours <= 10) session = getLang("session1");
-					else if (hours <= 12) session = getLang("session2");
-					else if (hours <= 18) session = getLang("session3");
-					else session = getLang("session4");
-
-					welcomeMessage = welcomeMessage
-						.replace(/\{userName\}/g, userName.join(", "))
-						.replace(/\{boxName\}/g, threadName)
-						.replace(/\{memberCount\}/g, memberCount)
-						.replace(/\{inviterName\}/g, inviterName)
-						.replace(/\{session\}/g, session);
-
-					message.send({ body: welcomeMessage, mentions });
-					delete global.temp.welcomeEvent[threadID];
-				}, 1500);
-			};
-	}
+          message.send(form);
+        }
+      };
+  }
 };
