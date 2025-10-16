@@ -3,93 +3,91 @@ const { getTime, drive } = global.utils;
 module.exports = {
   config: {
     name: "leave",
-    version: "2.1",
+    version: "3.0",
     author: "Mohammad Akash (Modified by GPT-5)",
     category: "events"
   },
 
   langs: {
     en: {
-      session1: "morning",
-      session2: "noon",
-      session3: "afternoon",
-      session4: "evening",
+      session1: "🌅 সকাল",
+      session2: "🌞 দুপুর",
+      session3: "🌇 বিকেল",
+      session4: "🌃 রাত",
 
       defaultLeaveMessage: `
 ━━━━━━━━━━━━━━━━━━━━━
-💔 __বিদায় {userName}__ 💔
-═════════════════════
+😢 প্রিয় {userName},
+আপনি "{threadName}" গ্রুপটি ছেড়ে গেছেন।
 
-🌙 আল্লাহ হাফেজ!  
-আপনি {threadName} গ্রুপটি ছেড়ে গেছেন।
+🕒 এখন সময়: {session} {time}
 
-🕒 এখন সময়: {session} ({time}:00)
+🌸 আপনার উপস্থিতি সবসময়ই ছিল আনন্দের।
+💬 সবাই আপনাকে মিস করবে 💖  
 
-✨ আমরা সবাই আপনার সুন্দর উপস্থিতি আর কথা মনে রাখব ❤️  
-যেখানেই থাকেন — সুস্থ ও ভালো থাকুন,  
-জীবনটা হোক আনন্দ ও বরকতময় 💫  
+আপনার ভবিষ্যৎ যাত্রা হোক সফল ও সুন্দর 🌈  
+আল্লাহ হাফেজ 🤲
 
-🕌 ইনশাআল্লাহ, আবার দেখা হবে!  
 ━━━━━━━━━━━━━━━━━━━━━
-Bot Owner : Mohammad Akash
+🤖 𝙱𝚘𝚝 𝙾𝚠𝚗𝚎𝚛 : 𝙼𝚘𝚑𝚊𝚖𝚖𝚊𝚍 𝙰𝚔𝚊𝚜𝚑
 ━━━━━━━━━━━━━━━━━━━━━
 `
     }
   },
 
   onStart: async ({ threadsData, message, event, api, usersData, getLang }) => {
-    if (event.logMessageType == "log:unsubscribe")
-      return async function () {
-        const { threadID } = event;
-        const threadData = await threadsData.get(threadID);
-        if (!threadData.settings.sendLeaveMessage) return;
+    if (event.logMessageType !== "log:unsubscribe") return;
+    const { threadID } = event;
+    const threadData = await threadsData.get(threadID);
+    if (!threadData.settings.sendLeaveMessage) return;
 
-        const { leftParticipantFbId } = event.logMessageData;
-        if (leftParticipantFbId == api.getCurrentUserID()) return;
+    const { leftParticipantFbId } = event.logMessageData;
+    if (leftParticipantFbId == api.getCurrentUserID()) return;
 
-        const hours = getTime("HH");
-        const threadName = threadData.threadName;
-        const userName = await usersData.getName(leftParticipantFbId);
+    const bdTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
+    const current = new Date(bdTime);
+    let hours = current.getHours();
+    const minutes = current.getMinutes().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const hour12 = ((hours + 11) % 12) + 1;
 
-        let { leaveMessage = getLang("defaultLeaveMessage") } = threadData.data;
+    const threadName = threadData.threadName;
+    const userName = await usersData.getName(leftParticipantFbId);
 
-        const session =
-          hours <= 10
-            ? getLang("session1")
-            : hours <= 12
-            ? getLang("session2")
-            : hours <= 18
-            ? getLang("session3")
-            : getLang("session4");
+    const session =
+      hours < 10
+        ? getLang("session1")
+        : hours < 13
+        ? getLang("session2")
+        : hours < 18
+        ? getLang("session3")
+        : getLang("session4");
 
-        leaveMessage = leaveMessage
-          .replace(/\{userName\}/g, userName)
-          .replace(/\{threadName\}/g, threadName)
-          .replace(/\{session\}/g, session)
-          .replace(/\{time\}/g, hours);
+    let { leaveMessage = getLang("defaultLeaveMessage") } = threadData.data;
 
-        const form = {
-          body: leaveMessage,
-          mentions: [
-            {
-              tag: userName,
-              id: leftParticipantFbId
-            }
-          ]
-        };
+    leaveMessage = leaveMessage
+      .replace(/\{userName\}/g, userName)
+      .replace(/\{threadName\}/g, threadName)
+      .replace(/\{session\}/g, session)
+      .replace(/\{time\}/g, `${hour12}:${minutes} ${ampm}`);
 
-        if (threadData.data.leaveAttachment) {
-          const files = threadData.data.leaveAttachment;
-          const attachments = files.reduce((acc, file) => {
-            acc.push(drive.getFile(file, "stream"));
-            return acc;
-          }, []);
-          form.attachment = (await Promise.allSettled(attachments))
-            .filter(({ status }) => status == "fulfilled")
-            .map(({ value }) => value);
-        }
+    const form = {
+      body: leaveMessage,
+      mentions: [{ tag: userName, id: leftParticipantFbId }]
+    };
 
-        message.send(form);
-      };
+    // 📎 যদি গ্রুপে Leave Attachment থাকে, সেটাও পাঠাবে
+    if (threadData.data.leaveAttachment) {
+      const files = threadData.data.leaveAttachment;
+      const attachments = files.reduce((acc, file) => {
+        acc.push(drive.getFile(file, "stream"));
+        return acc;
+      }, []);
+      form.attachment = (await Promise.allSettled(attachments))
+        .filter(({ status }) => status == "fulfilled")
+        .map(({ value }) => value);
+    }
+
+    message.send(form);
   }
 };
