@@ -4,7 +4,7 @@ module.exports.config = {
   name: "autotimer",
   version: "3.3",
   role: 0,
-  author: "MOHAMMAD AKASH",
+  author: "Mehedi Hassan",
   description: "⏰ প্রতি ঘণ্টায় সব গ্রুপে হেডারসহ অটো মেসেজ পাঠাবে (24-hour system)",
   category: "AutoTime",
   countDown: 3,
@@ -66,7 +66,7 @@ module.exports.onLoad = async function ({ api }) {
 ${messageText}
 ━━━━━━━━━━━━━━━━━━━━━
 📅 DATE : ${todayDate}
-🤖 𝙱𝚘𝚝 𝙾𝚠𝚗𝚎𝚛 : Mehdei Hassan  
+🤖 𝙱𝚘𝚝 𝙾𝚠𝚗𝚎𝚛 : Mehedi Hassan  
 ━━━━━━━━━━━━━━━━━━━━━`;
 
         try {
