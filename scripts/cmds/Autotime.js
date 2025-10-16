@@ -4,7 +4,7 @@ module.exports.config = {
   name: "autotimer",
   version: "3.3",
   role: 0,
-  author: "RAHAT (Enhanced by Akash)",
+  author: "MOHAMMAD AKASH",
   description: "⏰ প্রতি ঘণ্টায় সব গ্রুপে হেডারসহ অটো মেসেজ পাঠাবে (24-hour system)",
   category: "AutoTime",
   countDown: 3,
