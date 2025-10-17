@@ -48,4 +48,4 @@ Special thanks to NTKhang (original creator) for the base framework.
 
 <p align="center">
   <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&pause=1000&color=FF6B6B&center=true&vCenter=true&width=500&lines=Made+with+❤️+by+Mohammad+Akash;Star+this+repo+if+you+love+it!"/>
-</p><img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=500&section=footer"/></div>
+</p><img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=80&section=footer"/></div>
