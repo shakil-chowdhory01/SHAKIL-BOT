@@ -2,12 +2,12 @@ const axios = require("axios");
 const fs = require("fs");
 const path = __dirname + "/coinxbalance.json";
 
-// coinxbalance.json না থাকলে বানানো
+// ✅ coinxbalance.json না থাকলে বানানো
 if (!fs.existsSync(path)) {
   fs.writeFileSync(path, JSON.stringify({}, null, 2));
 }
 
-// ব্যালেন্স পড়া
+// 📘 ব্যালেন্স পড়া
 function getBalance(userID) {
   const data = JSON.parse(fs.readFileSync(path));
   if (data[userID]?.balance != null) return data[userID].balance;
@@ -17,14 +17,14 @@ function getBalance(userID) {
   return 100;
 }
 
-// ব্যালেন্স আপডেট
+// 💾 ব্যালেন্স আপডেট
 function setBalance(userID, balance) {
   const data = JSON.parse(fs.readFileSync(path));
   data[userID] = { balance };
   fs.writeFileSync(path, JSON.stringify(data, null, 2));
 }
 
-// ব্যালেন্স ফরম্যাটিং ফাংশন
+// 💲 ব্যালেন্স ফরম্যাটিং
 function formatBalance(num) {
   if (num >= 1e12) return (num / 1e12).toFixed(2).replace(/\.00$/, '') + "T$";
   if (num >= 1e9) return (num / 1e9).toFixed(2).replace(/\.00$/, '') + "B$";
@@ -35,7 +35,7 @@ function formatBalance(num) {
 
 module.exports.config = {
   name: "quiz",
-  version: "3.0.5",
+  version: "3.1.0",
   author: "Akash × ChatGPT",
   countDown: 5,
   role: 0,
@@ -49,7 +49,7 @@ module.exports.config = {
 
 const timeoutDuration = 20 * 1000; // 20 seconds
 
-module.exports.onStart = async function ({ api, event, args }) {
+module.exports.onStart = async function ({ api, event, args, usersData }) {
   const { threadID, senderID, messageID } = event;
   let balance = getBalance(senderID);
 
@@ -61,7 +61,7 @@ module.exports.onStart = async function ({ api, event, args }) {
     );
   }
 
-  // Help message
+  // 🧠 Help Command
   if (args[0]?.toLowerCase() === "h") {
     return api.sendMessage(
       `🧠 𝗤𝘂𝗶𝘇 𝗚𝘂𝗶𝗱𝗲:\n\n` +
@@ -77,6 +77,7 @@ module.exports.onStart = async function ({ api, event, args }) {
   }
 
   try {
+    // 🎯 Quiz API
     const res = await axios.get(`https://rubish-apihub.onrender.com/rubish/quiz-api?category=Bangla&apikey=rubish69`);
     const data = res.data;
 
@@ -94,24 +95,23 @@ module.exports.onStart = async function ({ api, event, args }) {
     api.sendMessage(formatted, threadID, async (err, info) => {
       if (err) return console.error(err);
 
+      // 🕒 Time limit
       const timeout = setTimeout(async () => {
-        const index = global.client.handleReply.findIndex(e => e.messageID === info.messageID);
-        if (index !== -1) {
-          try {
-            await api.unsendMessage(info.messageID);
-            api.sendMessage(`⏰ Time's up!\n✅ The correct answer was: ${data.answer}`, threadID);
-          } catch (e) {
-            console.error(e);
-          }
-          global.client.handleReply.splice(index, 1);
+        try {
+          await api.unsendMessage(info.messageID);
+          api.sendMessage(`⏰ Time's up!\n✅ The correct answer was: ${data.answer}`, threadID);
+        } catch (e) {
+          console.error(e);
         }
+        global.GoatBot.onReply.delete(info.messageID);
       }, timeoutDuration);
 
-      global.client.handleReply.push({
-        name: module.exports.config.name,
-        messageID: info.messageID,
+      // ✅ GoatBot v2 onReply system
+      global.GoatBot.onReply.set(info.messageID, {
+        commandName: module.exports.config.name,
         author: senderID,
         answer: data.answer,
+        messageID: info.messageID,
         timeout
       });
     });
@@ -122,25 +122,27 @@ module.exports.onStart = async function ({ api, event, args }) {
   }
 };
 
-module.exports.handleReply = async function ({ api, event, handleReply }) {
+// 📨 Handle Reply
+module.exports.onReply = async function ({ api, event, Reply }) {
   const { senderID, messageID, threadID, body } = event;
 
-  if (senderID !== handleReply.author) return;
+  if (senderID !== Reply.author) return;
 
   const userAnswer = body.trim().toUpperCase();
   if (!["A", "B", "C", "D"].includes(userAnswer)) {
     return api.sendMessage("⚠️ Please enter a valid option: A, B, C or D", threadID, messageID);
   }
 
-  clearTimeout(handleReply.timeout);
+  clearTimeout(Reply.timeout);
 
   let balance = getBalance(senderID);
 
-  if (userAnswer === handleReply.answer) {
+  if (userAnswer === Reply.answer) {
     balance += 1000;
     setBalance(senderID, balance);
 
-    await api.unsendMessage(handleReply.messageID);
+    await api.unsendMessage(Reply.messageID);
+    global.GoatBot.onReply.delete(Reply.messageID);
     return api.sendMessage(
       `✅ Correct!\n💰 You earned 1000 Coins\n📌 New Balance: ${formatBalance(balance)}`,
       threadID,
@@ -151,8 +153,9 @@ module.exports.handleReply = async function ({ api, event, handleReply }) {
     if (balance < 0) balance = 0;
     setBalance(senderID, balance);
 
+    global.GoatBot.onReply.delete(Reply.messageID);
     return api.sendMessage(
-      `❌ Wrong answer!\n✅ Correct answer: ${handleReply.answer}\n💸 50 Coins deducted\n📌 New Balance: ${formatBalance(balance)}`,
+      `❌ Wrong answer!\n✅ Correct answer: ${Reply.answer}\n💸 50 Coins deducted\n📌 New Balance: ${formatBalance(balance)}`,
       threadID,
       messageID
     );
