@@ -1,77 +1,54 @@
 const fs = require("fs-extra");
+const path = __dirname + "/cache/autoseen.json";
+
+// যদি ফাইল না থাকে, বানানো হবে
+if (!fs.existsSync(path)) {
+  fs.writeFileSync(path, JSON.stringify({ status: true }, null, 2));
+}
 
 module.exports = {
   config: {
     name: "autoseen",
-    version: "3.1",
+    version: "2.0",
     author: "Mohammad Akash",
-    countDown: 5,
-    role: 0,
-    shortDescription: "Auto seen messages (debug-enabled)",
-    longDescription: "Automatically mark all incoming messages as seen (always active). Debug logs enabled.",
+    countDown: 0,
+    role: 2,
+    shortDescription: "স্বয়ংক্রিয়ভাবে seen সিস্টেম",
+    longDescription: "বট স্বয়ংক্রিয়ভাবে সকল নতুন মেসেজ seen করবে।",
     category: "system",
+    guide: {
+      en: "{pn} on/off",
+    },
   },
 
-  onChat: async function ({ api, event }) {
-    try {
-      // debug logs to ensure handler is fired
-      console.log("[autoseen] onChat fired. threadID:", event && event.threadID, "messageID:", event && event.messageID);
-
-      // 1) Try markAsReadAll if available
-      if (typeof api.markAsReadAll === "function") {
-        try {
-          api.markAsReadAll(() => {
-            console.log("[autoseen] markAsReadAll() called (callback).");
-          });
-          return;
-        } catch (e) {
-          console.log("[autoseen] markAsReadAll() threw:", e);
-        }
-      } else {
-        console.log("[autoseen] api.markAsReadAll is not a function.");
-      }
-
-      // 2) Try markAsRead(threadID)
-      if (typeof api.markAsRead === "function" && event && event.threadID) {
-        try {
-          api.markAsRead(event.threadID, (err) => {
-            if (err) console.log("[autoseen] markAsRead(threadID) error:", err);
-            else console.log("[autoseen] markAsRead(threadID) success for", event.threadID);
-          });
-          return;
-        } catch (e) {
-          console.log("[autoseen] markAsRead(threadID) threw:", e);
-        }
-      } else {
-        console.log("[autoseen] api.markAsRead not available or no threadID.");
-      }
-
-      // 3) Try markAsRead for messageIDs (some libs accept messageID)
-      if (typeof api.markAsRead === "function" && event && event.messageID) {
-        try {
-          api.markAsRead(event.messageID, (err) => {
-            if (err) console.log("[autoseen] markAsRead(messageID) error:", err);
-            else console.log("[autoseen] markAsRead(messageID) success for", event.messageID);
-          });
-          return;
-        } catch (e) {
-          console.log("[autoseen] markAsRead(messageID) threw:", e);
-        }
-      }
-
-      // 4) As a last fallback, try set presence (some libs auto-read on typing/presence)
-      if (typeof api.setOptions === "function") {
-        try {
-          api.setOptions({ selfListen: false });
-          console.log("[autoseen] setOptions called (fallback).");
-        } catch (e) {
-          console.log("[autoseen] setOptions threw:", e);
-        }
-      }
-
-      console.log("[autoseen] no read-method succeeded. Check API methods and restart bot.");
-    } catch (err) {
-      console.log("[autoseen] Unexpected error:", err);
+  onStart: async function ({ message, args }) {
+    const data = JSON.parse(fs.readFileSync(path));
+    if (!args[0]) {
+      return message.reply(`📄 Autoseen বর্তমান অবস্থা: ${data.status ? "✅ চালু" : "❌ বন্ধ"}`);
     }
-  }
+
+    if (args[0].toLowerCase() === "on") {
+      data.status = true;
+      fs.writeFileSync(path, JSON.stringify(data, null, 2));
+      return message.reply("✅ Autoseen এখন থেকে চালু!");
+    } else if (args[0].toLowerCase() === "off") {
+      data.status = false;
+      fs.writeFileSync(path, JSON.stringify(data, null, 2));
+      return message.reply("❌ Autoseen এখন বন্ধ!");
+    } else {
+      return message.reply("⚠️ ব্যবহার করুন: autoseen on / off");
+    }
+  },
+
+  // মেসেজ দেখলেই seen করবে (যদি চালু থাকে)
+  onChat: async function ({ event, api }) {
+    try {
+      const data = JSON.parse(fs.readFileSync(path));
+      if (data.status === true) {
+        api.markAsReadAll();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  },
 };
