@@ -1,8 +1,8 @@
 <div align="center">
 
-🤖 Goat Bot V2 — by 𝐌𝐨𝐡𝐚𝐦𝐦𝐚𝐝 𝐀𝐤𝐚𝐬𝐡 🐐
-
-<img src="https://i.imgur.com/bMtWFb6.jpeg" width="800" style="border-radius:50%;margin-top:10px;" alt="Mohammad Akash"/><p align="center">
+<p align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?font=Orbitron&size=28&duration=3000&pause=500&color=00FFD1&center=true&vCenter=true&width=800&lines=🤖+Goat+Bot+V2+—+by+𝐌𝐨𝐡𝐚𝐦𝐦𝐚𝐝+𝐀𝐤𝐚𝐬𝐡+🐐" alt="Goat Bot V2"/>
+</p><img src="https://i.imgur.com/bMtWFb6.jpeg" width="800" style="border-radius:50%;margin-top:10px;" alt="Mohammad Akash"/><p align="center">
   <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&pause=1000&color=00C4FF&center=true&vCenter=true&width=500&lines=🚀+Goat+Bot+V2+Reloaded;⚡+Built+by+Mohammad+Akash;💫+Fast%2C+Smart+%26+Reliable;💥+Messenger+Bot+Evolution"/>
 </p>
 ---
